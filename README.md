@@ -6,6 +6,38 @@
 
 ---
 
+## Table of Contents
+
+1. [Student Details](#student-details)
+2. [Problem Statement](#problem-statement)
+3. [Objective](#objective)
+4. [Assignment Phases](#assignment-phases)
+   - [Phase 1 — Application Development & Modularization](#phase-1--application-development--modularization)
+   - [Phase 2 — Version Control System Strategy](#phase-2--version-control-system-vcs-strategy)
+   - [Phase 3 — Unit Testing & Validation Framework](#phase-3--unit-testing--validation-framework)
+   - [Phase 4 — Containerization with Docker](#phase-4--containerization-with-docker)
+   - [Phase 5 — Jenkins BUILD & Quality Gate](#phase-5--jenkins-build--quality-gate)
+   - [Phase 6 — Automated CI/CD Pipeline via GitHub Actions](#phase-6--automated-cicd-pipeline-via-github-actions)
+5. [Required Deliverables — Status](#required-deliverables--status)
+6. [Repository Structure](#repository-structure)
+7. [Local Setup — Developer Quickstart](#local-setup--developer-quickstart)
+8. [Running Tests](#running-tests)
+9. [API Quick Reference](#api-quick-reference)
+10. [Evaluation Criteria Mapping](#evaluation-criteria-mapping)
+11. [DevOps Concepts Applied — Learning Outcomes](#devops-concepts-applied--learning-outcomes)
+12. [Application Architecture — Deep Dive](#application-architecture--deep-dive)
+13. [CI/CD Pipeline — Full Flow Diagram](#cicd-pipeline--full-flow-diagram)
+14. [Key Files — Annotated](#key-files--annotated)
+15. [Technology Stack Summary](#technology-stack-summary)
+16. [Project Evolution — Version History](#project-evolution--version-history)
+17. [Security Considerations](#security-considerations)
+18. [Troubleshooting](#troubleshooting)
+19. [Future Improvements](#future-improvements-beyond-assignment-scope)
+20. [Appendix — Useful Commands](#appendix--useful-commands)
+21. [Acknowledgements](#acknowledgements)
+
+---
+
 ## Student Details
 
 | Field               | Details                                                          |
@@ -386,3 +418,245 @@ docker container prune -f
 ## Acknowledgements
 
 This project was developed as part of **Assignment 1** for the course **Introduction to DevOps (CSIZG514 / SEZG514 / SEUSZG514)**, Second Semester 2025 (S2-25), under the **Work Integrated Learning Programme (WILP)** at **Birla Institute of Technology and Science, Pilani (BITS Pilani)**.
+
+---
+
+## DevOps Concepts Applied — Learning Outcomes
+
+This assignment demonstrates the following industry-standard DevOps practices:
+
+### 1. Shift-Left Testing
+Tests run at the **earliest possible stage** — before Docker build, before deployment. Any broken logic is caught in Job 1 of GitHub Actions and in the Jenkins `Unit Tests` stage, long before the image reaches a registry or server.
+
+### 2. Immutable Infrastructure
+The Docker image is built fresh on every CI run from a pinned `requirements.txt`. There is no manual installation or configuration on the server — the entire environment is described as code and reproduced identically everywhere.
+
+### 3. Pipeline as Code
+Both CI/CD pipelines are version-controlled alongside the application:
+- `.github/workflows/main.yml` — GitHub Actions workflow
+- `Jenkinsfile` — Jenkins Declarative Pipeline
+
+This means pipeline changes go through the same review process (pull requests, commits) as application code.
+
+### 4. Fail Fast Principle
+The two-job GitHub Actions structure (`build-and-test` → `docker-build-and-test`) implements fail-fast ordering: if unit tests fail, the Docker build job never starts. This saves compute time and gives instant feedback.
+
+### 5. Environment Parity (Dev / CI / Production)
+| Environment     | Runtime                     | Port |
+|-----------------|-----------------------------|------|
+| Local dev       | `python app.py` (Flask dev) | 8000 |
+| Docker local    | `gunicorn` inside container | 5000 |
+| GitHub Actions  | `gunicorn` in `python:3.11-slim` | 5000 |
+| Jenkins         | Same Docker image            | 5000 |
+
+Using the same `Dockerfile` across all non-dev environments ensures **"works on my machine" problems are eliminated**.
+
+### 6. Declarative over Imperative
+The `Jenkinsfile` uses **Declarative Pipeline syntax** (not Scripted). Declarative pipelines are easier to read, enforce a consistent structure, and provide built-in post-build actions (`post { always {} failure {} }`).
+
+---
+
+## Application Architecture — Deep Dive
+
+### Request Routing Diagram
+
+```
+                        ┌─────────────────────────────────┐
+                        │         Flask Application        │
+                        │           (app.py)               │
+  Browser               │                                  │
+  (Accept: text/html) ──┤──► GET /  ──► templates/         │
+                        │             index.html (UI)      │
+  API Client / pytest   │                                  │
+  (no Accept header) ───┤──► GET /  ──► JSON response      │
+                        │                                  │
+  Any client ───────────┤──► GET /health  ──► {"status": "healthy"}
+                        │──► GET /workouts ──► [list]      │
+                        │──► POST /workouts ──► {workout}  │
+                        │──► GET /members  ──► [list]      │
+                        │──► POST /members ──► {member}    │
+                        └─────────────────────────────────┘
+```
+
+### Data Validation Rules
+
+| Endpoint        | Field               | Rule                                  | Error if violated    |
+|-----------------|---------------------|---------------------------------------|----------------------|
+| POST /workouts  | `name`              | Required, must be a non-empty string  | 400 Bad Request      |
+| POST /workouts  | `duration_minutes`  | Required, must be a positive number   | 400 Bad Request      |
+| POST /members   | `name`              | Required, must be a non-empty string  | 400 Bad Request      |
+| POST /members   | `email`             | Required, must contain `@`            | 400 Bad Request      |
+
+### Factory Pattern Explained
+
+```python
+# create_app() is called once per test / once at startup
+# Each call produces a fresh, isolated Flask instance
+app = create_app()          # production / gunicorn
+app = create_app(test_config={"TESTING": True})  # pytest
+```
+
+This pattern is the recommended Flask approach for testable applications (Flask docs: *Application Factories*). Without it, tests would share global state and could interfere with each other.
+
+---
+
+## CI/CD Pipeline — Full Flow Diagram
+
+```
+Developer pushes code to GitHub
+           │
+           ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │                    GitHub Actions                           │
+  │                                                             │
+  │  Job 1: build-and-test                                      │
+  │  ┌─────────────────────────────────────────────────────┐    │
+  │  │  1. actions/checkout@v4                             │    │
+  │  │  2. actions/setup-python@v4  (Python 3.11)         │    │
+  │  │  3. pip install -r requirements.txt                 │    │
+  │  │  4. python -m compileall .  (syntax check)         │    │
+  │  │  5. pytest -q               (unit tests)           │    │
+  │  └──────────────────┬──────────────────────────────────┘    │
+  │                     │ PASS                                   │
+  │                     ▼                                        │
+  │  Job 2: docker-build-and-test                               │
+  │  ┌─────────────────────────────────────────────────────┐    │
+  │  │  1. actions/checkout@v4                             │    │
+  │  │  2. docker/setup-buildx-action@v2                  │    │
+  │  │  3. docker/build-push-action@v4  (load: true)      │    │
+  │  │  4. docker run --rm aceest:ci pytest -q            │    │
+  │  └─────────────────────────────────────────────────────┘    │
+  └─────────────────────────────────────────────────────────────┘
+           │
+           ▼  (on push to main — future extension)
+  ┌──────────────────┐
+  │  Jenkins Server  │
+  │  Checkout        │
+  │  Install         │
+  │  pytest -q       │
+  │  docker build    │
+  └──────────────────┘
+```
+
+---
+
+## Key Files — Annotated
+
+### `app.py` — Key sections
+
+```python
+def create_app(test_config=None):
+    app = Flask(__name__)
+    # In-memory stores reset per app instance (safe for tests)
+    app.config["WORKOUTS"] = []
+    app.config["MEMBERS"] = []
+
+    @app.route("/")
+    def index():
+        # Serve HTML to browsers, JSON to API clients / pytest
+        accept = request.headers.get("Accept")
+        if accept and "text/html" in accept:
+            return render_template("index.html")
+        return jsonify({"service": "ACEest Fitness & Gym API", "status": "ok"})
+
+    @app.route("/workouts", methods=["GET", "POST"])
+    def workouts():
+        if request.method == "POST":
+            data = request.get_json()
+            # Validate required fields before storing
+            ...
+        return jsonify(app.config["WORKOUTS"])
+```
+
+### `Dockerfile` — Key sections
+
+```dockerfile
+FROM python:3.11-slim          # small, official base image
+ENV PYTHONUNBUFFERED=1         # logs appear immediately (no buffering)
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt   # no cache = smaller layer
+COPY . .                       # copies tests/ as well (needed for CI)
+EXPOSE 5000
+CMD ["gunicorn", "app:create_app()", "-b", "0.0.0.0:5000", "--workers", "2"]
+```
+
+### `.github/workflows/main.yml` — Critical fix
+
+```yaml
+- name: Build Docker image
+  uses: docker/build-push-action@v4
+  with:
+    context: .
+    tags: aceest:ci
+    load: true      # ← REQUIRED: loads image into local daemon for docker run
+    push: false
+```
+
+Without `load: true`, the image exists only in Buildx cache and the following `docker run aceest:ci` step fails with *"Unable to find image"*.
+
+---
+
+## Technology Stack Summary
+
+| Component          | Technology              | Version   | Purpose                                   |
+|--------------------|-------------------------|-----------|-------------------------------------------|
+| Web framework      | Flask                   | 2.2.5     | REST API and HTML rendering               |
+| WSGI compatibility | Werkzeug                | 2.3.7     | Pinned for Flask 2.2.x compatibility      |
+| Production server  | Gunicorn                | 20.1.0    | Multi-worker WSGI server in Docker        |
+| Test framework     | Pytest                  | 7.4.0     | Unit test runner                          |
+| Language           | Python                  | 3.11 (Docker) / 3.13 (local) | Application runtime |
+| Container runtime  | Docker                  | Latest    | Image build and run                       |
+| Base image         | python:3.11-slim        | —         | Minimal Debian-based Python image         |
+| Frontend UI        | Bootstrap               | 5.3.2 (CDN) | Responsive browser interface            |
+| CI/CD              | GitHub Actions          | —         | Automated build, test, Docker validation  |
+| Build pipeline     | Jenkins (Declarative)   | —         | Secondary BUILD & quality gate            |
+| VCS                | Git + GitHub            | —         | Source control and collaboration          |
+
+---
+
+## Project Evolution — Version History
+
+The application was progressively developed from baseline scripts provided in the `The code versions for DevOps Assignment/` directory:
+
+| Version file              | What it introduced                             |
+|---------------------------|------------------------------------------------|
+| `Aceestver-1.0.py`        | Initial script — basic Python structure        |
+| `Aceestver-1.1.py`        | Early iteration with minor updates             |
+| `Aceestver-2.1.2.py`      | Service logic expansion                        |
+| `Aceestver-2.2.1.py`      | Validation additions                           |
+| `Aceestver-2.2.4.py`      | Refinements to endpoints                       |
+| `Aceestver-3.0.1.py`      | Modularisation begin                           |
+| `Aceestver-3.1.2.py`      | Factory pattern introduction                   |
+| `Aceestver-3.2.4.py`      | Production-readiness improvements              |
+| `Aceestver1.1.2.py`       | Merged iteration                               |
+| `Aceestver2.0.1.py`       | Final pre-DevOps baseline                      |
+| **`app.py`** (this repo)  | **Final DevOps-ready Flask application**       |
+
+---
+
+## Security Considerations
+
+| Area                    | Practice applied                                                              |
+|-------------------------|-------------------------------------------------------------------------------|
+| Dependency pinning      | All packages pinned to exact versions in `requirements.txt` — prevents supply-chain drift |
+| No credentials in code  | No passwords, API keys, or tokens are committed; Jenkins uses SSH deploy keys stored in Jenkins Credentials store |
+| Minimal base image      | `python:3.11-slim` excludes unnecessary OS packages — smaller attack surface  |
+| Non-root considerations | Container runs as the default user; for production, add `RUN useradd -m appuser && USER appuser` to `Dockerfile` |
+| Input validation        | All POST endpoints validate and reject malformed input before processing       |
+| `.dockerignore`         | Local virtualenvs, `.git`, and build artefacts are excluded from the image context |
+
+---
+
+## Future Improvements (Beyond Assignment Scope)
+
+| Improvement                    | Description                                                   |
+|--------------------------------|---------------------------------------------------------------|
+| Persistent database            | Replace in-memory lists with SQLite or PostgreSQL via SQLAlchemy |
+| Authentication                 | Add JWT-based authentication for member and workout management |
+| Docker image scanning          | Integrate Trivy or Snyk into the CI pipeline for vulnerability scanning |
+| Test coverage reporting        | Add `pytest-cov` and publish HTML coverage reports in GitHub Actions |
+| Container registry push        | Push tagged images to Docker Hub or GitHub Container Registry on `main` merge |
+| Kubernetes deployment          | Add a `k8s/` directory with Deployment and Service manifests for orchestration |
+| Environment-specific config    | Use `.env` files and `python-dotenv` for environment-specific settings |
+| Database migrations            | Add Alembic for schema version control if a database is introduced |
