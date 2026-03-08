@@ -33,6 +33,11 @@ def create_app(test_config=None):
             app.logger.info('Forcing UI because ui=1')
             return render_template("index.html")
 
+        # If there's no Accept header (e.g., pytest default client), return JSON to match tests.
+        if request.headers.get('Accept') is None:
+            app.logger.info('No Accept header, returning JSON')
+            return jsonify({"service": "ACEest Fitness & Gym API", "status": "ok"}), 200
+
         # Use quality values to prefer text/html when equal or higher than application/json.
         q_html = request.accept_mimetypes['text/html'] if 'text/html' in request.accept_mimetypes else 0
         q_json = request.accept_mimetypes['application/json'] if 'application/json' in request.accept_mimetypes else 0
