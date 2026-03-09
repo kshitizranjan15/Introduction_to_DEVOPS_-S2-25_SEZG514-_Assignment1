@@ -1,133 +1,491 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ACEest Fitness & Gym - UI</title>
-    <link rel="icon" href="/favicon.ico" type="image/svg+xml">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  </head>
-  <body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">ACEest Fitness & Gym</a>
-      </div>
-    </nav>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACEest Fitness & Gym</title>
+  <link rel="icon" href="/favicon.ico" type="image/svg+xml">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #d4af37;
+      --dark-bg: #1a1a1a;
+      --card-bg: #242424;
+      --border-col: #333;
+      --fl-color: #e74c3c;
+      --mg-color: #2ecc71;
+      --bg-color: #3498db;
+    }
+    body { background: var(--dark-bg); color: #eee; font-family: "Helvetica Neue", sans-serif; }
+    .navbar { background: var(--gold) !important; }
+    .navbar-brand { color: #000 !important; font-weight: 900; font-size: 1.4rem; letter-spacing: 1px; }
+    .nav-link { color: #333 !important; font-weight: 600; }
+    .nav-link:hover { color: #000 !important; }
+    .section-title { color: var(--gold); font-weight: 700; border-bottom: 2px solid var(--gold); padding-bottom: 6px; margin-bottom: 18px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border-col); color: #eee; }
+    .card-header { background: #2f2f2f; color: var(--gold); font-weight: 700; border-bottom: 1px solid var(--border-col); }
+    .form-control, .form-select {
+      background: #333; border: 1px solid #555; color: #eee;
+    }
+    .form-control:focus, .form-select:focus {
+      background: #444; color: #fff; border-color: var(--gold); box-shadow: 0 0 0 0.2rem rgba(212,175,55,.25);
+    }
+    .form-control::placeholder { color: #888; }
+    .btn-gold { background: var(--gold); color: #000; font-weight: 700; border: none; }
+    .btn-gold:hover { background: #c9a227; color: #000; }
+    .list-group-item { background: #2a2a2a; border-color: #444; color: #eee; }
+    .badge-fl { background: var(--fl-color); }
+    .badge-mg { background: var(--mg-color); }
+    .badge-bg { background: var(--bg-color); }
+    .program-card { border-left: 4px solid; transition: transform .15s; cursor: pointer; }
+    .program-card:hover { transform: translateY(-3px); }
+    .program-card.fl { border-color: var(--fl-color); }
+    .program-card.mg { border-color: var(--mg-color); }
+    .program-card.bg { border-color: var(--bg-color); }
+    .detail-box { background: #111; border-radius: 6px; padding: 12px 16px; font-family: "Consolas", monospace; font-size: .88rem; white-space: pre-line; min-height: 80px; }
+    .metric-box { background: #2a2a2a; border: 1px solid var(--border-col); border-radius: 8px; padding: 14px; text-align: center; }
+    .metric-box .val { font-size: 1.8rem; font-weight: 800; color: var(--gold); }
+    .metric-box .lbl { font-size: .8rem; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+    footer { border-top: 1px solid #333; color: #666; }
+    /* version timeline */
+    .timeline { list-style: none; padding-left: 0; }
+    .timeline li { padding: 6px 0 6px 20px; border-left: 2px solid var(--gold); margin-left: 8px; position: relative; font-size: .88rem; }
+    .timeline li::before { content: "●"; position: absolute; left: -9px; color: var(--gold); }
+  </style>
+</head>
+<body>
 
-    <div class="container">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card mb-3">
-            <div class="card-header">Workouts</div>
-            <div class="card-body">
-              <ul id="workout-list" class="list-group mb-3"></ul>
-
-              <h6>Add workout</h6>
-              <form id="workout-form">
-                <div class="mb-2">
-                  <input id="w-name" class="form-control" placeholder="Name" required />
-                </div>
-                <div class="mb-2">
-                  <input id="w-duration" type="number" class="form-control" placeholder="Duration minutes" required />
-                </div>
-                <button class="btn btn-sm btn-primary" type="submit">Add</button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <div class="card mb-3">
-            <div class="card-header">Members</div>
-            <div class="card-body">
-              <ul id="member-list" class="list-group mb-3"></ul>
-
-              <h6>Add member</h6>
-              <form id="member-form">
-                <div class="mb-2">
-                  <input id="m-name" class="form-control" placeholder="Name" required />
-                </div>
-                <div class="mb-2">
-                  <input id="m-email" type="email" class="form-control" placeholder="Email" required />
-                </div>
-                <button class="btn btn-sm btn-primary" type="submit">Add</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <footer class="mt-4 text-muted small">API available at <code>/workouts</code> and <code>/members</code></footer>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">⚡ ACEest FITNESS &amp; GYM</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="#programs-section">Programs</a></li>
+        <li class="nav-item"><a class="nav-link" href="#calculator-section">Calories</a></li>
+        <li class="nav-item"><a class="nav-link" href="#workouts-section">Workouts</a></li>
+        <li class="nav-item"><a class="nav-link" href="#members-section">Members</a></li>
+        <li class="nav-item"><a class="nav-link" href="#gym-info-section">Gym Info</a></li>
+        <li class="nav-item"><a class="nav-link" href="#versions-section">Versions</a></li>
+      </ul>
     </div>
+  </div>
+</nav>
 
-    <script>
-      async function loadWorkouts(){
-        const res = await fetch('/workouts');
-        const data = await res.json();
-        const ul = document.getElementById('workout-list');
-        ul.innerHTML = '';
-        data.forEach(w => {
-          const li = document.createElement('li');
-          li.className = 'list-group-item d-flex justify-content-between align-items-center';
-          li.textContent = `${w.name} — ${w.duration_minutes} min`;
-          ul.appendChild(li);
-        })
-      }
+<!-- HERO -->
+<div class="text-center py-4" style="background:#111; border-bottom:1px solid #333;">
+  <h1 style="color:var(--gold); font-weight:900; letter-spacing:2px;">ACEest FUNCTIONAL FITNESS SYSTEM</h1>
+  <p class="text-secondary mb-0">DevOps Assignment 1 — Flask Web API with Full ACEest Business Logic</p>
+  <small class="text-muted">Evolved from 10 desktop versions → modern CI/CD pipeline</small>
+</div>
 
-      async function loadMembers(){
-        const res = await fetch('/members');
-        const data = await res.json();
-        const ul = document.getElementById('member-list');
-        ul.innerHTML = '';
-        data.forEach(m => {
-          const li = document.createElement('li');
-          li.className = 'list-group-item';
-          li.textContent = `${m.name} <${m.email}>`;
-          ul.appendChild(li);
-        })
-      }
+<div class="container-fluid py-4 px-4">
 
-      document.getElementById('workout-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('w-name').value;
-        const duration = Number(document.getElementById('w-duration').value);
-        const res = await fetch('/workouts', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({name, duration_minutes: duration})
-        });
-        if (res.status === 201) {
-          document.getElementById('w-name').value = '';
-          document.getElementById('w-duration').value = '';
-          loadWorkouts();
-        } else {
-          const err = await res.json();
-          alert('Error: ' + (err.error || JSON.stringify(err)));
-        }
-      });
+  <!-- ===== PROGRAMS SECTION ===== -->
+  <section id="programs-section" class="mb-5">
+    <h4 class="section-title">🏋️ Training Programs</h4>
+    <p class="text-secondary small mb-3">Three core programs from the original ACEest system (v1.0). Click any program to see the full workout and nutrition plan.</p>
+    <div class="row g-3" id="program-cards">
+      <!-- Injected by JS -->
+    </div>
+    <!-- Program detail panel -->
+    <div class="row mt-3" id="program-detail-panel" style="display:none!important;">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header" id="detail-program-name">Workout Plan</div>
+          <div class="card-body p-2">
+            <div class="detail-box" id="detail-workout"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">Nutrition Plan</div>
+          <div class="card-body p-2">
+            <div class="detail-box" id="detail-diet"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      document.getElementById('member-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('m-name').value;
-        const email = document.getElementById('m-email').value;
-        const res = await fetch('/members', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({name, email})
-        });
-        if (res.status === 201) {
-          document.getElementById('m-name').value = '';
-          document.getElementById('m-email').value = '';
-          loadMembers();
-        } else {
-          const err = await res.json();
-          alert('Error: ' + (err.error || JSON.stringify(err)));
-        }
-      });
+  <!-- ===== CALORIE CALCULATOR ===== -->
+  <section id="calculator-section" class="mb-5">
+    <h4 class="section-title">🔥 Calorie Calculator</h4>
+    <p class="text-secondary small mb-3">
+      Calorie targets derived from the <code>calorie_factor</code> formula used in Aceestver-1.1 through Aceestver-3.2.4:
+      <strong>calories = weight_kg × factor</strong> (FL=22, MG=35, BG=26).
+    </p>
+    <div class="card" style="max-width:480px;">
+      <div class="card-header">Calculate Daily Calorie Target</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Body Weight (kg)</label>
+          <input id="calc-weight" type="number" min="1" class="form-control" placeholder="e.g. 75">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Program</label>
+          <select id="calc-program" class="form-select">
+            <option value="">— select —</option>
+            <option value="FL">Fat Loss (FL)</option>
+            <option value="MG">Muscle Gain (MG)</option>
+            <option value="BG">Beginner (BG)</option>
+          </select>
+        </div>
+        <button class="btn btn-gold w-100" onclick="calculateCalories()">Calculate</button>
+        <div id="calc-result" class="mt-3" style="display:none;">
+          <div class="metric-box">
+            <div class="val" id="calc-kcal">—</div>
+            <div class="lbl">kcal / day</div>
+          </div>
+          <p class="text-center text-secondary small mt-2" id="calc-breakdown"></p>
+        </div>
+        <div id="calc-error" class="text-danger small mt-2" style="display:none;"></div>
+      </div>
+    </div>
+  </section>
 
-      // initial load
+  <!-- ===== WORKOUTS ===== -->
+  <section id="workouts-section" class="mb-5">
+    <h4 class="section-title">📋 Workout Log</h4>
+    <div class="row g-3">
+      <div class="col-md-7">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            Logged Workouts
+            <span class="badge" style="background:var(--gold);color:#000;" id="workout-count">0</span>
+          </div>
+          <div class="card-body p-2">
+            <ul id="workout-list" class="list-group list-group-flush"></ul>
+            <p id="workout-empty" class="text-secondary small text-center py-3">No workouts logged yet.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-header">Log a Workout</div>
+          <div class="card-body">
+            <form id="workout-form">
+              <div class="mb-2">
+                <label class="form-label small">Workout Name</label>
+                <input id="w-name" class="form-control" placeholder="e.g. Back Squat 5×5" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small">Duration (minutes)</label>
+                <input id="w-duration" type="number" min="1" class="form-control" placeholder="e.g. 60" required>
+              </div>
+              <button class="btn btn-gold w-100" type="submit">Log Workout</button>
+            </form>
+            <div id="w-error" class="text-danger small mt-2" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MEMBERS ===== -->
+  <section id="members-section" class="mb-5">
+    <h4 class="section-title">👥 Members</h4>
+    <div class="row g-3">
+      <div class="col-md-7">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            Registered Members
+            <span class="badge" style="background:var(--gold);color:#000;" id="member-count">0</span>
+          </div>
+          <div class="card-body p-2">
+            <ul id="member-list" class="list-group list-group-flush"></ul>
+            <p id="member-empty" class="text-secondary small text-center py-3">No members registered yet.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-header">Register Member</div>
+          <div class="card-body">
+            <form id="member-form">
+              <div class="mb-2">
+                <label class="form-label small">Full Name</label>
+                <input id="m-name" class="form-control" placeholder="e.g. Arjun Kumar" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small">Email</label>
+                <input id="m-email" type="email" class="form-control" placeholder="e.g. arjun@aceest.in" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small">Program (optional)</label>
+                <select id="m-program" class="form-select">
+                  <option value="">— select program —</option>
+                  <option value="Fat Loss (FL)">Fat Loss (FL)</option>
+                  <option value="Muscle Gain (MG)">Muscle Gain (MG)</option>
+                  <option value="Beginner (BG)">Beginner (BG)</option>
+                </select>
+              </div>
+              <button class="btn btn-gold w-100" type="submit">Register Member</button>
+            </form>
+            <div id="m-error" class="text-danger small mt-2" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GYM INFO ===== -->
+  <section id="gym-info-section" class="mb-5">
+    <h4 class="section-title">🏢 Gym Capacity &amp; Metrics</h4>
+    <p class="text-secondary small mb-3">Facility metrics from Aceestver-1.0 (CAPACITY: 150 Users · AREA: 10,000 sq ft · BREAK-EVEN: 250 Members)</p>
+    <div class="row g-3" id="gym-info-row">
+      <!-- Injected by JS -->
+    </div>
+  </section>
+
+  <!-- ===== API REFERENCE ===== -->
+  <section class="mb-5">
+    <h4 class="section-title">🔌 API Endpoints</h4>
+    <div class="table-responsive">
+      <table class="table table-dark table-bordered table-sm small">
+        <thead style="color:var(--gold);">
+          <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/</code></td><td>Browser UI (this page)</td></tr>
+          <tr><td>GET</td><td><code>/health</code></td><td>Health check — returns <code>{"status":"healthy"}</code></td></tr>
+          <tr><td>GET</td><td><code>/programs</code></td><td>All 3 ACEest programs with workout &amp; diet plans</td></tr>
+          <tr><td>GET</td><td><code>/programs/FL</code></td><td>Single program by code (FL / MG / BG)</td></tr>
+          <tr><td>POST</td><td><code>/calories</code></td><td>Calculate daily kcal: <code>{"weight_kg":75,"program_code":"FL"}</code></td></tr>
+          <tr><td>GET</td><td><code>/workouts</code></td><td>List all logged workouts</td></tr>
+          <tr><td>POST</td><td><code>/workouts</code></td><td>Log a workout: <code>{"name":"...","duration_minutes":60}</code></td></tr>
+          <tr><td>GET</td><td><code>/members</code></td><td>List all registered members</td></tr>
+          <tr><td>POST</td><td><code>/members</code></td><td>Register a member: <code>{"name":"...","email":"..."}</code></td></tr>
+          <tr><td>GET</td><td><code>/gym-info</code></td><td>Gym capacity, area, break-even metrics</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== VERSION TIMELINE ===== -->
+  <section id="versions-section" class="mb-5">
+    <h4 class="section-title">📜 Version History (10 Desktop → 1 Web API)</h4>
+    <p class="text-secondary small mb-3">The application evolved from Tkinter desktop scripts to this Flask web service deployed via Docker and CI/CD.</p>
+    <div class="row">
+      <div class="col-md-6">
+        <ul class="timeline">
+          <li><strong>Aceestver-1.0</strong> — Tkinter GUI, 3 programs (FL/MG/BG), workout &amp; diet display, gym metrics</li>
+          <li><strong>Aceestver-1.1</strong> — Added calorie factor formula, colour-coded programs, CSV export</li>
+          <li><strong>Aceestver-2.1.2</strong> — SQLite database for client profiles and weekly progress tracking</li>
+          <li><strong>Aceestver-2.2.1</strong> — Matplotlib charts for adherence visualisation</li>
+          <li><strong>Aceestver-2.2.4</strong> — Height/weight schema, membership expiry, full DB migration logic</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <ul class="timeline">
+          <li><strong>Aceestver-3.0.1</strong> — Tabbed UI (Client Summary + Progress &amp; Analytics), AI program generator, PDF reports</li>
+          <li><strong>Aceestver-3.1.2</strong> — Role-based login screen (Admin / Trainer), full workout &amp; exercise logging</li>
+          <li><strong>Aceestver-3.2.4</strong> — Multi-table DB (users, clients, workouts, exercises, metrics), membership billing</li>
+          <li><strong>Aceestver1.1.2</strong> — Multi-client table UI, progress chart, notes field, CSV bulk export</li>
+          <li><strong>Aceestver2.0.1</strong> — Clean DB-backed final desktop baseline before web migration</li>
+          <li><strong style="color:var(--gold);">app.py (this)</strong> — <span style="color:var(--gold);">Flask REST API + Bootstrap UI + Docker + GitHub Actions + Jenkins ✅</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="text-center py-3 mt-2">
+  <small>ACEest Fitness &amp; Gym · DevOps Assignment 1 · BITS Pilani WILP · S2-25</small>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // ── PROGRAMS ──────────────────────────────────────────────────────────────
+  let programData = {};
+
+  async function loadPrograms() {
+    const res = await fetch('/programs');
+    programData = await res.json();
+    const container = document.getElementById('program-cards');
+    container.innerHTML = '';
+
+    const classMap = { FL: 'fl', MG: 'mg', BG: 'bg' };
+    const iconMap  = { FL: '🔥', MG: '💪', BG: '🌱' };
+
+    Object.entries(programData).forEach(([name, data]) => {
+      const cls  = classMap[data.code] || '';
+      const icon = iconMap[data.code] || '⚡';
+      const col  = document.createElement('div');
+      col.className = 'col-md-4';
+      col.innerHTML = `
+        <div class="card program-card ${cls}" onclick="showProgramDetail('${name}')">
+          <div class="card-body">
+            <h5 class="card-title mb-1">${icon} ${name}</h5>
+            <p class="text-secondary small mb-2">Calorie factor: <strong>${data.calorie_factor} kcal × kg</strong></p>
+            <p class="mb-0 small" style="color:${data.color};">
+              ${data.exercises ? data.exercises.slice(0,3).join(' · ') + '…' : ''}
+            </p>
+          </div>
+        </div>`;
+      container.appendChild(col);
+    });
+  }
+
+  function showProgramDetail(name) {
+    const data = programData[name];
+    if (!data) return;
+    document.getElementById('detail-program-name').textContent = '🏋️ ' + name + ' — Workout Plan';
+    document.getElementById('detail-workout').textContent = data.workout;
+    document.getElementById('detail-diet').textContent = data.diet;
+    const panel = document.getElementById('program-detail-panel');
+    panel.style.removeProperty('display');
+    panel.style.display = 'flex';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── CALORIE CALCULATOR ────────────────────────────────────────────────────
+  async function calculateCalories() {
+    const weight  = parseFloat(document.getElementById('calc-weight').value);
+    const program = document.getElementById('calc-program').value;
+    const resEl   = document.getElementById('calc-result');
+    const errEl   = document.getElementById('calc-error');
+    resEl.style.display = 'none';
+    errEl.style.display = 'none';
+
+    if (!weight || !program) {
+      errEl.textContent = 'Please enter weight and select a program.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const res  = await fetch('/calories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weight_kg: weight, program_code: program }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Error calculating calories.';
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('calc-kcal').textContent = data.estimated_daily_kcal.toLocaleString();
+    document.getElementById('calc-breakdown').textContent =
+      `${weight} kg × ${data.calorie_factor} (${data.program}) = ${data.estimated_daily_kcal} kcal/day`;
+    resEl.style.display = 'block';
+  }
+
+  // ── WORKOUTS ──────────────────────────────────────────────────────────────
+  async function loadWorkouts() {
+    const res  = await fetch('/workouts');
+    const data = await res.json();
+    const ul   = document.getElementById('workout-list');
+    const empty = document.getElementById('workout-empty');
+    document.getElementById('workout-count').textContent = data.length;
+    ul.innerHTML = '';
+    empty.style.display = data.length ? 'none' : 'block';
+    data.forEach(w => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `<span>🏃 <strong>${w.name}</strong></span>
+        <span class="badge" style="background:#333;color:var(--gold);">${w.duration_minutes} min</span>`;
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById('workout-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name     = document.getElementById('w-name').value.trim();
+    const duration = Number(document.getElementById('w-duration').value);
+    const errEl    = document.getElementById('w-error');
+    errEl.style.display = 'none';
+    const res = await fetch('/workouts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, duration_minutes: duration }),
+    });
+    if (res.status === 201) {
+      document.getElementById('w-name').value = '';
+      document.getElementById('w-duration').value = '';
       loadWorkouts();
+    } else {
+      const err = await res.json();
+      errEl.textContent = err.error || 'Failed to log workout.';
+      errEl.style.display = 'block';
+    }
+  });
+
+  // ── MEMBERS ───────────────────────────────────────────────────────────────
+  async function loadMembers() {
+    const res  = await fetch('/members');
+    const data = await res.json();
+    const ul   = document.getElementById('member-list');
+    const empty = document.getElementById('member-empty');
+    document.getElementById('member-count').textContent = data.length;
+    ul.innerHTML = '';
+    empty.style.display = data.length ? 'none' : 'block';
+    const badgeMap = { 'FL': 'badge-fl', 'MG': 'badge-mg', 'BG': 'badge-bg' };
+    data.forEach(m => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item';
+      const prog = m.program || '';
+      const code = prog.match(/\((\w+)\)/)?.[1] || '';
+      const badge = code ? `<span class="badge ${badgeMap[code]||''} ms-2">${prog}</span>` : '';
+      li.innerHTML = `👤 <strong>${m.name}</strong> <small class="text-secondary">&lt;${m.email}&gt;</small>${badge}`;
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById('member-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name    = document.getElementById('m-name').value.trim();
+    const email   = document.getElementById('m-email').value.trim();
+    const program = document.getElementById('m-program').value;
+    const errEl   = document.getElementById('m-error');
+    errEl.style.display = 'none';
+    const res = await fetch('/members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, program }),
+    });
+    if (res.status === 201) {
+      document.getElementById('m-name').value = '';
+      document.getElementById('m-email').value = '';
+      document.getElementById('m-program').value = '';
       loadMembers();
-    </script>
-  </body>
+    } else {
+      const err = await res.json();
+      errEl.textContent = err.error || 'Failed to register member.';
+      errEl.style.display = 'block';
+    }
+  });
+
+  // ── GYM INFO ──────────────────────────────────────────────────────────────
+  async function loadGymInfo() {
+    const res  = await fetch('/gym-info');
+    const data = await res.json();
+    const row  = document.getElementById('gym-info-row');
+    const items = [
+      { val: data.capacity,          lbl: 'Max Capacity',      unit: 'users'   },
+      { val: data.area_sqft.toLocaleString(), lbl: 'Gym Area', unit: 'sq ft'   },
+      { val: data.breakeven_members, lbl: 'Break-Even Target',  unit: 'members' },
+    ];
+    row.innerHTML = items.map(i => `
+      <div class="col-md-4">
+        <div class="metric-box">
+          <div class="val">${i.val}</div>
+          <div class="lbl">${i.lbl}</div>
+          <div class="text-secondary small">${i.unit}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  loadPrograms();
+  loadWorkouts();
+  loadMembers();
+  loadGymInfo();
+</script>
+</body>
 </html>

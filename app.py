@@ -1,10 +1,81 @@
-from flask import Flask, jsonify, request, abort, render_template, Response
+from flask import Flask, jsonify, request, render_template, Response
+
+# ---------------------------------------------------------------------------
+# ACEest Fitness & Gym — Program data derived from all 10 version files
+# (Aceestver-1.0 through Aceestver2.0.1 / Aceestver-3.2.4)
+# ---------------------------------------------------------------------------
+
+PROGRAMS = {
+    "Fat Loss (FL)": {
+        "code": "FL",
+        "calorie_factor": 22,
+        "color": "#e74c3c",
+        "workout": (
+            "Mon: Back Squat 5×5 + AMRAP Core\n"
+            "Tue: EMOM 20min Assault Bike\n"
+            "Wed: Bench Press + 21-15-9\n"
+            "Thu: 10RFT Deadlifts / Box Jumps\n"
+            "Fri: Zone 2 Cardio 30min (Active Recovery)"
+        ),
+        "diet": (
+            "Breakfast: 3 Egg Whites + Oats Idli\n"
+            "Lunch: Grilled Chicken + Brown Rice\n"
+            "Dinner: Fish Curry + Millet Roti\n"
+            "Target: ~2,000 kcal/day"
+        ),
+        "exercises": ["Back Squat", "Assault Bike", "Bench Press", "Deadlift", "Box Jumps"],
+    },
+    "Muscle Gain (MG)": {
+        "code": "MG",
+        "calorie_factor": 35,
+        "color": "#2ecc71",
+        "workout": (
+            "Mon: Squat 5×5\n"
+            "Tue: Bench Press 5×5\n"
+            "Wed: Deadlift 4×6\n"
+            "Thu: Front Squat 4×8\n"
+            "Fri: Incline Press 4×10\n"
+            "Sat: Barbell Rows 4×10"
+        ),
+        "diet": (
+            "Breakfast: 4 Eggs + Peanut Butter Oats\n"
+            "Lunch: Chicken Biryani (250g Chicken)\n"
+            "Dinner: Mutton Curry + Jeera Rice\n"
+            "Target: ~3,200 kcal/day"
+        ),
+        "exercises": ["Back Squat", "Bench Press", "Deadlift", "Front Squat", "Incline Press", "Barbell Row"],
+    },
+    "Beginner (BG)": {
+        "code": "BG",
+        "calorie_factor": 26,
+        "color": "#3498db",
+        "workout": (
+            "Full Body Circuit (3×/week):\n"
+            "- Air Squats\n"
+            "- Ring Rows\n"
+            "- Push-ups\n"
+            "Focus: Technique Mastery & Consistency (90% threshold)"
+        ),
+        "diet": (
+            "Balanced Tamil Meals:\n"
+            "Idli / Dosa / Rice + Dal / Chapati\n"
+            "Protein Target: 120g/day"
+        ),
+        "exercises": ["Air Squats", "Ring Rows", "Push-ups", "Plank", "Dumbbell Row"],
+    },
+}
+
+GYM_METRICS = {
+    "capacity": 150,
+    "area_sqft": 10000,
+    "breakeven_members": 250,
+}
 
 
 def create_app(test_config=None):
     app = Flask(__name__, template_folder="templates")
 
-    # Simple in-memory stores (replaceable by a DB later)
+    # In-memory stores (replaceable by a DB — see Version history)
     app.config.setdefault("WORKOUTS", [])
     app.config.setdefault("MEMBERS", [])
 
@@ -91,6 +162,63 @@ def create_app(test_config=None):
         member = {"id": len(app.config["MEMBERS"]) + 1, "name": name, "email": email}
         app.config["MEMBERS"].append(member)
         return jsonify(member), 201
+
+
+    # ------------------------------------------------------------------
+    # Programs endpoint — returns all ACEest program definitions
+    # (sourced from Aceestver-1.0 → Aceestver-3.2.4 program data)
+    # ------------------------------------------------------------------
+    @app.route("/programs", methods=["GET"])
+    def programs():
+        return jsonify(PROGRAMS), 200
+
+
+    @app.route("/programs/<program_code>", methods=["GET"])
+    def program_detail(program_code):
+        """Return a single program by its short code (FL, MG, BG)."""
+        for name, data in PROGRAMS.items():
+            if data["code"].upper() == program_code.upper():
+                return jsonify({"program": name, **data}), 200
+        return jsonify({"error": f"Program '{program_code}' not found. Valid codes: FL, MG, BG"}), 404
+
+
+    # ------------------------------------------------------------------
+    # Calorie calculator — derived from calorie_factor logic in all versions
+    # ------------------------------------------------------------------
+    @app.route("/calories", methods=["POST"])
+    def calories():
+        payload = request.get_json() or {}
+        weight = payload.get("weight_kg")
+        program_code = payload.get("program_code", "").upper()
+
+        if weight is None or not isinstance(weight, (int, float)) or weight <= 0:
+            return jsonify({"error": "weight_kg must be a positive number"}), 400
+
+        matched = None
+        for name, data in PROGRAMS.items():
+            if data["code"].upper() == program_code:
+                matched = (name, data)
+                break
+
+        if not matched:
+            return jsonify({"error": f"program_code must be one of: {', '.join(d['code'] for d in PROGRAMS.values())}"}), 400
+
+        program_name, program_data = matched
+        estimated = round(weight * program_data["calorie_factor"])
+        return jsonify({
+            "weight_kg": weight,
+            "program": program_name,
+            "calorie_factor": program_data["calorie_factor"],
+            "estimated_daily_kcal": estimated,
+        }), 200
+
+
+    # ------------------------------------------------------------------
+    # Gym metrics endpoint — capacity / area / break-even
+    # ------------------------------------------------------------------
+    @app.route("/gym-info", methods=["GET"])
+    def gym_info():
+        return jsonify(GYM_METRICS), 200
 
 
     return app
