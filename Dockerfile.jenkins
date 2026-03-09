@@ -37,4 +37,11 @@ RUN jenkins-plugin-cli --plugins \
     github \
     ws-cleanup
 
-USER jenkins
+# Entrypoint script: fix docker socket permissions then start Jenkins normally
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Keep running as root so entrypoint can chmod the socket,
+# then jenkins.sh drops privileges to the jenkins user automatically
+USER root
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
