@@ -1,5 +1,19 @@
-# ACEest Fitness & Gym — DevOps Assignment 1
-
+# ACEest Fitness & Gym — DevO7. [Repository Structure](#repository-structure)
+8. [Local Setup — Developer Quickstart](#local-setup--developer-quickstart)
+9. [Running Tests](#running-tests)
+10. [API Quick Reference](#api-quick-reference)
+11. [Evaluation Criteria Mapping](#evaluation-criteria-mapping)
+12. [DevOps Concepts Applied — Learning Outcomes](#devops-concepts-applied--learning-outcomes)
+13. [Application Architecture — Deep Dive](#application-architecture--deep-dive)
+14. [CI/CD Pipeline — Full Flow Diagram](#cicd-pipeline--full-flow-diagram)
+15. [Key Files — Annotated](#key-files--annotated)
+16. [Technology Stack Summary](#technology-stack-summary)
+17. [Project Evolution — Version History](#project-evolution--version-history)
+18. [Security Considerations](#security-considerations)
+19. [Troubleshooting](#troubleshooting)
+20. [Future Improvements](#future-improvements-beyond-assignment-scope)
+21. [Appendix — Useful Commands](#appendix--useful-commands)
+22. [Acknowledgements](#acknowledgements)
 **Course:** Introduction to DevOps (Merged — CSIZG514 / SEZG514 / SEUSZG514) · Second Semester 2025 (S2-25)  
 **Institution:** Birla Institute of Technology and Science, Pilani (BITS Pilani)  
 **Division:** Work Integrated Learning Programme (WILP)
@@ -19,7 +33,15 @@
    - [Phase 5 — Jenkins BUILD & Quality Gate](#phase-5--jenkins-build--quality-gate)
    - [Phase 6 — Automated CI/CD Pipeline via GitHub Actions](#phase-6--automated-cicd-pipeline-via-github-actions)
 5. [Required Deliverables — Status](#required-deliverables--status)
-6. [Repository Structure](#repository-structure)
+6. [CI/CD Pipeline — Live Evidence (Screenshots)](#cicd-pipeline--live-evidence-screenshots)
+   - [Screenshot 1 — First Push: CI Check In Progress](#screenshot-1--first-push-to-github-ci-check-in-progress)
+   - [Screenshot 2 — Second Commit: Unit Test Failure Detected](#screenshot-2--second-commit-pushed-unit-test-failure-detected)
+   - [Screenshot 3 — Unit Tests Pass, Docker Fails](#screenshot-3--github-actions-unit-tests-pass-docker-job-fails)
+   - [Screenshot 4 — Both Jobs Pass (Green ✅)](#screenshot-4--github-actions-both-jobs-pass-green-)
+   - [Screenshot 5 — Jenkins Configure Pipeline](#screenshot-5--jenkins-configure-pipeline-scm-from-github)
+   - [Screenshot 6 — Jenkins Stage View All Builds](#screenshot-6--jenkins-stage-view--all-builds-history)
+   - [Screenshot 7 — Final Green Checkmark on GitHub](#screenshot-7--github-green-checkmark-on-latest-commit-jenkins--github-actions-both-passing)
+7. [Repository Structure](#repository-structure)
 7. [Local Setup — Developer Quickstart](#local-setup--developer-quickstart)
 8. [Running Tests](#running-tests)
 9. [API Quick Reference](#api-quick-reference)
@@ -273,6 +295,183 @@ Push / Pull Request
 | GitHub Actions workflow (push + PR trigger)    | ✅ Complete        |
 | Browser UI for manual testing                  | ✅ Complete (Bootstrap 5) |
 | README / Project Report                        | ✅ Complete        |
+
+---
+
+## CI/CD Pipeline — Live Evidence (Screenshots)
+
+The following screenshots document the complete end-to-end CI/CD journey — from the first push to GitHub, through GitHub Actions running in the cloud, to the Jenkins pipeline running locally in Docker. Each screenshot captures a distinct, significant event in the pipeline lifecycle.
+
+---
+
+### Screenshot 1 — First Push to GitHub: CI Check In Progress
+
+![GitHub CI check in progress — first push](images/01_github_ci_in_progress.png)
+
+**What this shows:**  
+Immediately after the very first `git push` to the `main` branch, GitHub detects the `.github/workflows/main.yml` workflow file and triggers the **CI / build-and-test** job automatically. The yellow dot (🟡) next to the commit hash indicates a check is **in progress**. The pop-up tooltip reads *"1 in progress check"* with the job name **CI / build-and-test (push) — In progress — This check has started...**.
+
+**Key DevOps concept demonstrated — Continuous Integration trigger:**  
+This is the GitHub Actions webhook in action. Every push to any branch fires the workflow without any manual intervention. The developer receives instant feedback directly on the GitHub commit view — no need to visit an external CI dashboard.
+
+**Pipeline state at this point:**
+```
+git push → GitHub webhook → Actions runner provisioned → Job 1 started
+```
+
+---
+
+### Screenshot 2 — Second Commit Pushed: Unit Test Failure Detected
+
+![GitHub second commit — unit test failing issue](images/02_github_second_commit_pending.png)
+
+**What this shows:**  
+A second commit (`307ebf6`) was pushed with the message *"S2-25_SEZG514:correcting unit test failing issue"*. The yellow dot on the commit indicates GitHub Actions is still running for this new push. This screenshot captures the moment between push and CI completion — the pipeline has been triggered but the result is not yet known.
+
+**Key DevOps concept demonstrated — Iterative fixing:**  
+This commit is a real-world example of the **shift-left testing** principle in practice. A failing unit test was identified (because GitHub Actions caught it on the first push), the developer fixed it immediately, and pushed a corrective commit. This is exactly the workflow CI/CD is designed to encourage — fix problems early, cheaply, and with automated validation.
+
+---
+
+### Screenshot 3 — GitHub Actions: Unit Tests Pass, Docker Job Fails
+
+![GitHub Actions — build-and-test passes, docker-build-and-test fails](images/03_github_actions_unit_pass_docker_fail.png)
+
+**What this shows:**  
+The GitHub Actions run for commit `307ebf6` shows a split result:
+- ✅ **`build-and-test`** — **Succeeded in 6 seconds.** All 5 pytest tests passed (`5 passed in 0.13s`), confirming the unit test fix was successful.
+- ❌ **`docker-build-and-test`** — **Failed.** The Docker build or in-container test step encountered an error.
+
+The expanded **Run tests (pytest)** step clearly shows:
+```
+Run pytest -q
+.....    [100%]
+5 passed in 0.13s
+```
+
+**Key DevOps concept demonstrated — Two-stage fail-fast pipeline:**  
+The pipeline intentionally runs unit tests **before** Docker operations. This *fail-fast* ordering means: if unit tests fail, Docker build never runs (saving CI minutes). Here, unit tests pass, allowing execution to proceed to the Docker stage, where a separate issue is surfaced. The pipeline correctly isolated the two failure modes.
+
+**Root cause of Docker failure:** The `.dockerignore` was initially excluding the `tests/` directory, so `pytest` could not find test files when run inside the container. This was fixed by removing `tests` from `.dockerignore`.
+
+---
+
+### Screenshot 4 — GitHub Actions: Both Jobs Pass (Green ✅)
+
+![GitHub Actions — all jobs pass, green checkmark on commit](images/04_github_actions_all_pass.png)
+
+**What this shows:**  
+After fixing the Docker issue (run `#4` for commit `b0bc97a`), **both CI jobs now pass**. The GitHub repository home page shows a **green checkmark (✓)** next to the latest commit *"S2-25_SEZG514:correcting docker test failing issue #3"*. The `docker-build-and-test` job succeeded in **31 seconds**, with all steps completing successfully:
+
+| Step                                | Status | Time |
+|-------------------------------------|--------|------|
+| Set up job                          | ✅     | 4s   |
+| Checkout                            | ✅     | 0s   |
+| Set up QEMU                         | ✅     | 5s   |
+| Set up Docker Buildx                | ✅     | 5s   |
+| Build Docker image (for local runner) | ✅   | 12s  |
+| Run tests inside container          | ✅     | 1s   |
+| Post Build Docker image             | ✅     | 0s   |
+
+**Key DevOps concept demonstrated — Green build as deployment gate:**  
+The green ✅ on the commit is the **artifact** of CI — it is proof that this commit has passed all automated quality gates. In a production pipeline, this green status is what gates a deployment. No green = no deploy.
+
+**Fix applied:** `load: true` was added to `docker/build-push-action@v4` in `.github/workflows/main.yml`. Without it, Docker Buildx builds the image into an isolated build cache but does **not** load it into the runner's local Docker daemon, causing `docker run aceest:ci` to fail with *"Unable to find image"*.
+
+---
+
+### Screenshot 5 — Jenkins: Configure Pipeline (SCM from GitHub)
+
+![Jenkins pipeline configuration — SCM from GitHub](images/05_jenkins_configure_pipeline.png)
+
+**What this shows:**  
+The Jenkins job `aceest-fitness-gym` is configured with **"Pipeline script from SCM"** — meaning Jenkins pulls the `Jenkinsfile` directly from the GitHub repository rather than having the pipeline script stored in Jenkins itself. Key configuration:
+
+- **SCM:** Git
+- **Repository URL:** `https://github.com/kshitizranjan15/Introduction_to_DEVOPS_-S2-25_SEZG514-_Assignment1`
+- **Credentials:** None (public repository)
+- **Branch Specifier:** `*/main`
+
+**Key DevOps concept demonstrated — Pipeline as Code:**  
+By storing the `Jenkinsfile` in the Git repository, the pipeline definition is version-controlled alongside the application code. Any change to the build pipeline goes through the same commit/review process as application changes. This is the **"Pipeline as Code"** principle, which eliminates the risk of undocumented, click-configured Jenkins jobs that cannot be reproduced.
+
+**How Jenkins was set up locally:**  
+Jenkins runs inside Docker using a custom image (`aceest-jenkins:local`) built from `Dockerfile.jenkins`. The container mounts the host Docker socket (`/var/run/docker.sock`) so Jenkins can run Docker commands. A custom entrypoint (`docker-entrypoint.sh`) automatically fixes socket permissions (`chmod 666 /var/run/docker.sock`) on every container start.
+
+```bash
+# How the Jenkins container was started
+docker run -d \
+  --name aceest-jenkins \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v jenkins_home:/var/jenkins_home \
+  aceest-jenkins:local
+```
+
+---
+
+### Screenshot 6 — Jenkins: Stage View — All Builds History
+
+![Jenkins Stage View — build history with all stages](images/06_jenkins_stage_view.png)
+
+**What this shows:**  
+The Jenkins **Stage View** for the `aceest-fitness-gym` job showing **8 build runs** (builds #1 through #8), with builds #7 and #8 both showing green (successful). The Stage View columns map directly to the 6 stages defined in the `Jenkinsfile`:
+
+| Stage                    | Avg Time | Purpose                                          |
+|--------------------------|----------|--------------------------------------------------|
+| Declarative: Checkout SCM | 1s      | Jenkins internal SCM initialisation              |
+| Checkout                  | 958ms   | `checkout scm` — pull latest commit from GitHub  |
+| Setup Python              | 5s      | Create `.venv`, `pip install -r requirements.txt`|
+| Lint / Syntax Check       | 295ms   | `python -m compileall .` — catch syntax errors   |
+| Unit Tests                | 344ms   | `pytest -q` — run all 5 tests                    |
+| Build Docker Image        | 7s      | `docker build -t aceest:build-N .`               |
+| Test Inside Container     | 451ms   | `docker run --rm aceest:build-N pytest -q`       |
+| Declarative: Post Actions | 342ms   | Cleanup workspace via `cleanWs()`                |
+
+Build #7 tooltip shows the commit `657313e` ("S2-25_SEZG514:Docker update") that triggered the pipeline — demonstrating traceability from Jenkins build back to the exact Git commit.
+
+**Key DevOps concept demonstrated — Build traceability and audit trail:**  
+Every Jenkins build is linked to a specific Git commit. This means if a production deployment breaks, the team can instantly identify exactly which code change caused it by correlating the build number with the commit hash.
+
+**Earlier failed builds (#1–#6)** represent the debugging journey:
+- Builds #1–#2: `permission denied` on Docker socket
+- Build #3: `fatal: not in a git directory` (lightweight checkout)  
+- Build #4: Groovy `unexpected token` syntax error in `Jenkinsfile`
+- Builds #7–#8: All stages green ✅
+
+---
+
+### Screenshot 7 — GitHub: Green Checkmark on Latest Commit (Jenkins + GitHub Actions Both Passing)
+
+![GitHub — green checkmark on latest commit confirming all CI passing](images/07_github_final_green.png)
+
+**What this shows:**  
+The final state of the GitHub repository — commit `657313e` ("S2-25_SEZG514:Docker update") has a **green ✅ checkmark** on the `main` branch. At this point, **11 commits** have been made to the repository, representing the full development and debugging lifecycle of the project.
+
+**What the green checkmark means at this final stage:**
+1. ✅ GitHub Actions `build-and-test` — Python install + 5 pytest tests passed
+2. ✅ GitHub Actions `docker-build-and-test` — Docker image built + tests passed inside container
+3. ✅ Jenkins pipeline (local) — all 6 stages completed successfully (visible in Stage View above)
+
+**Key DevOps concept demonstrated — End-to-end CI/CD validation:**  
+This single green checkmark is the culmination of the entire assignment. It represents:
+- **Code quality** — unit tests catching regressions automatically
+- **Environment consistency** — Docker ensuring the app works the same in CI as locally
+- **Pipeline integrity** — Jenkins providing a secondary, independent quality gate
+- **Traceability** — every build linked to an exact commit hash
+- **Automation** — zero manual testing steps required
+
+**The journey this commit represents (11 commits):**
+
+| Commit # | Message                                          | What it fixed                            |
+|----------|--------------------------------------------------|------------------------------------------|
+| 1        | S2-25_SEZG514:commiting assignment code base     | Initial push with all project files      |
+| 2        | S2-25_SEZG514:correcting unit test failing issue | Fixed `conftest.py` and `Werkzeug` pin   |
+| 3        | S2-25_SEZG514:correcting docker test failing issue #1 | Added `load: true` to Actions workflow |
+| 4        | S2-25_SEZG514:correcting docker test failing issue #2 | Fixed `.dockerignore` (kept `tests/`)  |
+| 5        | S2-25_SEZG514:correcting docker test failing issue #3 | Verified Docker + pytest chain passes  |
+| 6–10     | Various Jenkins fixes                            | Socket perms, checkout, syntax errors    |
+| 11       | S2-25_SEZG514:Docker update                      | Final clean pipeline — all green ✅      |
 
 ---
 
