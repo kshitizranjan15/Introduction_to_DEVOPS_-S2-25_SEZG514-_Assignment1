@@ -4,6 +4,8 @@
 **Institution:** Birla Institute of Technology and Science, Pilani (BITS Pilani)  
 **Division:** Work Integrated Learning Programme (WILP)
 
+> 🔗 **GitHub Repository:** [kshitizranjan15/Introduction\_to\_DEVOPS\_-S2-25\_SEZG514-\_Assignment1](https://github.com/kshitizranjan15/Introduction_to_DEVOPS_-S2-25_SEZG514-_Assignment1)
+
 ---
 
 ## Table of Contents
@@ -29,6 +31,13 @@
    - [Screenshot 7 — Jenkins Stage View](#screenshot-7--jenkins-stage-view--all-builds-history)
    - [Screenshot 8 — GitHub Final Green Commit](#screenshot-8--github-final-green-commit-all-ci-passing)
    - [Screenshot 9 — GitHub Commit Line Final State](#screenshot-9--github-commit-line-final-state)
+   - [Screenshot 10 — Live App: Root View (Part 1 — Hero + Programs)](#screenshot-10--live-app-root-view-part-1--hero--programs)
+   - [Screenshot 11 — Live App: Root View (Part 2 — Program Detail)](#screenshot-11--live-app-root-view-part-2--program-detail-expanded)
+   - [Screenshot 12 — Live App: Root View (Part 3 — Workouts & Members)](#screenshot-12--live-app-root-view-part-3--workouts--members)
+   - [Screenshot 13 — Live App: Root View (Part 4 — Gym Info & Version Timeline)](#screenshot-13--live-app-root-view-part-4--gym-info--version-timeline)
+   - [Screenshot 14 — Live App: Calorie Calculator in Action](#screenshot-14--live-app-calorie-calculator-in-action)
+   - [Screenshot 15 — Live App: Logging a Workout](#screenshot-15--live-app-logging-a-workout)
+   - [Screenshot 16 — Live App: Registering a Member](#screenshot-16--live-app-registering-a-member)
 7. [Repository Structure](#repository-structure)
 8. [Local Setup — Developer Quickstart](#local-setup--developer-quickstart)
 9. [Running Tests](#running-tests)
@@ -111,7 +120,7 @@ Develop a foundational Flask web application tailored for fitness and gym manage
 A Git repository was initialised locally and pushed to a publicly accessible GitHub repository using proper branching and commit conventions.
 
 **Repository:**
-`https://github.com/kshitizranjan15/Introduction_to_DEVOPS_-S2-25_SEZG514-_Assignment1`
+[https://github.com/kshitizranjan15/Introduction\_to\_DEVOPS\_-S2-25\_SEZG514-\_Assignment1](https://github.com/kshitizranjan15/Introduction_to_DEVOPS_-S2-25_SEZG514-_Assignment1)
 
 **Branching strategy:**
 
@@ -457,7 +466,68 @@ A close-up of the GitHub repository commit line showing the latest commit on `ma
 
 ---
 
-## Repository Structure
+### Screenshot 10 — Live App: Root View (Part 1 — Hero + Programs)
+
+![ACEest live app — hero banner and training programs section](images/10_Root_view_of_app_part1.png)
+
+**What this shows:**
+The live Flask web application running in a browser at `http://localhost:5000`. The top of the page displays the **gold ACEest navbar**, the hero banner introducing the system, and the **Training Programs section** with three colour-coded cards — 🔥 Fat Loss (FL), 💪 Muscle Gain (MG), and 🌱 Beginner (BG). Each card shows the calorie factor and top exercises drawn directly from the original Tkinter version files (v1.0 through v3.2.4).
+
+---
+
+### Screenshot 11 — Live App: Root View (Part 2 — Program Detail Expanded)
+
+![ACEest live app — expanded program workout and nutrition plan](images/11_Root_view_of_app_part2.png)
+
+**What this shows:**
+A program card has been clicked, expanding the **program detail panel** below the cards. Two side-by-side dark boxes display the full weekly **Workout Plan** and the **Nutrition Plan** for the selected program — content fetched live from the `GET /programs/<code>` endpoint. This mirrors the original desktop app's workout/diet display tab from Aceestver-1.0 onwards, now delivered as a REST API response.
+
+---
+
+### Screenshot 12 — Live App: Root View (Part 3 — Workouts & Members)
+
+![ACEest live app — workout log and members registration sections](images/12_Root_view_of_app_part3.png)
+
+**What this shows:**
+The **Workout Log** section (left) and **Members** section (right) in the dark-themed UI. Both sections show live-updating lists fed by `GET /workouts` and `GET /members`, with a badge count in the card header. The forms on the right allow logging a new workout or registering a new member, which `POST` to the respective API endpoints and refresh the list without a page reload.
+
+---
+
+### Screenshot 13 — Live App: Root View (Part 4 — Gym Info & Version Timeline)
+
+![ACEest live app — gym metrics and version history sections](images/13_Root_view_of_app_part4.png)
+
+**What this shows:**
+The bottom of the main page, showing the **Gym Capacity & Metrics** section with three metric boxes (Capacity: 150 users · Area: 10,000 sq ft · Break-even: 250 members) sourced from `GET /gym-info`, followed by the **Version History timeline** charting the evolution of the application from `Aceestver-1.0` (basic Tkinter) through all 10 desktop versions to the final Flask web API with Docker and CI/CD.
+
+---
+
+### Screenshot 14 — Live App: Calorie Calculator in Action
+
+![ACEest live app — calorie calculator showing result](images/14_calorie_calc.png)
+
+**What this shows:**
+The **Calorie Calculator** in use. A body weight has been entered and a program selected; after clicking **Calculate**, the result card displays the daily calorie target in large gold text, with the full breakdown formula below it (`weight_kg × factor = kcal/day`). The calculation is performed by the `POST /calories` endpoint using the `calorie_factor` values (FL=22, MG=35, BG=26) sourced directly from Aceestver-1.1 through v3.2.4.
+
+---
+
+### Screenshot 15 — Live App: Logging a Workout
+
+![ACEest live app — workout entry form and live log list](images/15_workout_log_adding.png)
+
+**What this shows:**
+A workout being logged via the form. The **workout name** and **duration in minutes** have been entered; upon submission the entry appears instantly in the live list on the left via `POST /workouts`, and the badge counter increments. This demonstrates the in-memory store updating in real time without any page refresh — a feature available across all API-backed sections.
+
+---
+
+### Screenshot 16 — Live App: Registering a Member
+
+![ACEest live app — member registration form with program selection](images/16_register_member.png)
+
+**What this shows:**
+The **Register Member** form completed with a member's name, email, and selected training program (FL / MG / BG). On submission, `POST /members` creates the entry and the member appears in the list with a colour-coded program badge — matching the program colours from the original Aceestver desktop suite (🔴 FL, 🟢 MG, 🔵 BG). This closes the loop between the web UI, the REST API, and the original business logic.
+
+---
 
 ```
 .
@@ -485,7 +555,14 @@ A close-up of the GitHub repository commit line showing the latest commit on `ma
 │   ├── 06_jenkins_configure_pipeline.png  # Screenshot 6 — Jenkins pipeline config
 │   ├── 07_jenkins_stage_view.png        # Screenshot 7 — Jenkins Stage View all builds
 │   ├── 08_github_final_green_commit.png # Screenshot 8 — GitHub final green commit
-│   └── 09_github_final_green_line.png   # Screenshot 9 — GitHub commit line final state
+│   ├── 09_github_final_green_line.png   # Screenshot 9 — GitHub commit line final state
+│   ├── 10_Root_view_of_app_part1.png    # Screenshot 10 — Live app hero + programs
+│   ├── 11_Root_view_of_app_part2.png    # Screenshot 11 — Live app program detail expanded
+│   ├── 12_Root_view_of_app_part3.png    # Screenshot 12 — Live app workouts & members
+│   ├── 13_Root_view_of_app_part4.png    # Screenshot 13 — Live app gym info & version timeline
+│   ├── 14_calorie_calc.png              # Screenshot 14 — Live app calorie calculator result
+│   ├── 15_workout_log_adding.png        # Screenshot 15 — Live app workout log entry
+│   └── 16_register_member.png          # Screenshot 16 — Live app member registration
 └── README.md                            # This report
 ```
 
